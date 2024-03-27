@@ -12,7 +12,7 @@
 all: release
 
 TEST_PATH="/test/unittest"
-DUCKDB_PATH="/duckdb"
+DUCKDB_PATH="/duckdb-pgq"
 
 # For non-MinGW windows the path is slightly different
 ifeq ($(OS),Windows_NT)
@@ -49,12 +49,13 @@ BUILD_FLAGS=-DEXTENSION_STATIC_BUILD=1 $(EXTENSION_FLAGS) ${EXT_FLAGS} $(OSX_BUI
 
 debug:
 	mkdir -p  build/debug && \
-	cmake $(GENERATOR) $(BUILD_FLAGS) $(EXT_DEBUG_FLAGS) -DCMAKE_BUILD_TYPE=Debug -S ./duckdb/ -B build/debug && \
+	echo $(BUILD_FLAGS)
+	cmake $(GENERATOR) $(BUILD_FLAGS) $(EXT_DEBUG_FLAGS) -DCMAKE_BUILD_TYPE=Debug -S ./duckdb-pgq/ -B build/debug && \
 	cmake --build build/debug --config Debug
 
 release:
 	mkdir -p build/release && \
-	cmake $(GENERATOR) $(BUILD_FLAGS) $(EXT_RELEASE_FLAGS) -DCMAKE_BUILD_TYPE=Release -S ./duckdb/ -B build/release && \
+	cmake $(GENERATOR) $(BUILD_FLAGS) $(EXT_RELEASE_FLAGS) -DCMAKE_BUILD_TYPE=Release -S ./duckdb-pgq/ -B build/release && \
 	cmake --build build/release --config Release
 
 # Main tests
@@ -106,5 +107,5 @@ pull:
 clean:
 	rm -rf build
 	rm -rf testext
-	cd duckdb && make clean
-	cd duckdb && make clean-python
+	cd duckdb-pgq && make clean
+	cd duckdb-pgq && make clean-python
