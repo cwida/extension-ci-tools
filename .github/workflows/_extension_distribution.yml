@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       linux_matrix: ${{ steps.set-matrix-linux.outputs.linux_matrix }}
-      windows_matrix: ${{ steps.set-matrix-windows.outputs.windows_matrix }}
+#      windows_matrix: ${{ steps.set-matrix-windows.outputs.windows_matrix }}
       osx_matrix: ${{ steps.set-matrix-osx.outputs.osx_matrix }}
       wasm_matrix: ${{ steps.set-matrix-wasm.outputs.wasm_matrix }}
     steps:
@@ -70,7 +70,7 @@ jobs:
         run: |
           python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os linux --output linux_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
           python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os osx --output osx_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os windows --output windows_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+#          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os windows --output windows_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
           python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os wasm --output wasm_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
 
       - id: set-matrix-linux
@@ -85,11 +85,11 @@ jobs:
           echo osx_matrix=$osx_matrix >> $GITHUB_OUTPUT
           echo `cat $GITHUB_OUTPUT`
 
-      - id: set-matrix-windows
-        run: |
-          windows_matrix="`cat windows_matrix.json`"
-          echo windows_matrix=$windows_matrix >> $GITHUB_OUTPUT
-          echo `cat $GITHUB_OUTPUT`
+#      - id: set-matrix-windows
+#        run: |
+#          windows_matrix="`cat windows_matrix.json`"
+#          echo windows_matrix=$windows_matrix >> $GITHUB_OUTPUT
+#          echo `cat $GITHUB_OUTPUT`
 
       - id: set-matrix-wasm
         run: |
