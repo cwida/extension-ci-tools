@@ -45,7 +45,20 @@ on:
         required: false
         type: boolean
         default: true
-
+      enable_rust:
+        required: false
+        type: boolean
+        default: false
+      # Supply an override repository to build, instead of using the current one
+      override_repository:
+        required: false
+        type: string
+        default: ""
+      # The git ref used for the override_repository
+      override_ref:
+        required: false
+        type: string
+        default: ""
 jobs:
   generate_matrix:
     name: Generate matrix
@@ -57,6 +70,17 @@ jobs:
       wasm_matrix: ${{ steps.set-matrix-wasm.outputs.wasm_matrix }}
     steps:
       - uses: actions/checkout@v3
+        name: Checkout override repository
+        if: ${{inputs.override_repository != ''}}
+        with:
+          repository: ${{ inputs.override_repository }}
+          ref: ${{ inputs.override_ref }}
+          fetch-depth: 0
+          submodules: 'true'
+
+      - uses: actions/checkout@v3
+        name: Checkout current repository
+        if: ${{inputs.override_repository == ''}}
         with:
           fetch-depth: 0
           submodules: 'true'
@@ -108,7 +132,7 @@ jobs:
     env:
       VCPKG_TARGET_TRIPLET: ${{ matrix.vcpkg_triplet }}
       VCPKG_TOOLCHAIN_PATH: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
-      GEN: Ninja
+      GEN: ninja
       BUILD_SHELL: ${{ inputs.build_duckdb_shell && '1' || '0' }}
       DUCKDB_PLATFORM: ${{ matrix.duckdb_arch }}
 
@@ -116,10 +140,10 @@ jobs:
       - name: Install required ubuntu packages
         if: ${{ matrix.duckdb_arch == 'linux_amd64' || matrix.duckdb_arch == 'linux_arm64' }}
         run: |
-          apt-get update -y -qq --fix-missing
-          apt-get install -y -qq software-properties-common --fix-missing
+          apt-get update -y -qq
+          apt-get install -y -qq software-properties-common
           add-apt-repository ppa:git-core/ppa
-          apt-get update -y -qq --fix-missing
+          apt-get update -y -qq
           apt-get install -y -qq --fix-missing ninja-build make gcc-multilib g++-multilib libssl-dev wget openjdk-8-jdk zip maven unixodbc-dev libc6-dev-i386 lib32readline6-dev libssl-dev libcurl4-gnutls-dev libexpat1-dev gettext unzip build-essential checkinstall libffi-dev curl libz-dev openssh-client
 
       - name: Install Git 2.18.5
@@ -133,6 +157,17 @@ jobs:
           git --version
 
       - uses: actions/checkout@v3
+        name: Checkout override repository
+        if: ${{inputs.override_repository != ''}}
+        with:
+          repository: ${{ inputs.override_repository }}
+          ref: ${{ inputs.override_ref }}
+          fetch-depth: 0
+          submodules: 'true'
+
+      - uses: actions/checkout@v3
+        name: Checkout current repository
+        if: ${{inputs.override_repository == ''}}
         with:
           fetch-depth: 0
           submodules: 'true'
@@ -142,16 +177,19 @@ jobs:
           cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
+      - name: Fix CentOS 7 EOL
+        if: ${{ matrix.duckdb_arch == 'linux_amd64_gcc4' }}
+        run: |
+          # Workaround the fact that CentOS 7 is EOL
+          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+          yum-config-manager --disable centos-sclo-rh
+          yum install epel-release -y
+
       - name: Setup ManyLinux2014
         if: ${{ matrix.duckdb_arch == 'linux_amd64_gcc4' }}
         run: |
           ./duckdb-pgq/scripts/setup_manylinux2014.sh general aws-cli ccache ssh python_alias openssl
-
-      - name: Setup Ccache
-        uses: hendrikmuhs/ccache-action@v1.2.11 # Note: pinned due to GLIBC incompatibility in later releases
-        continue-on-error: true
-        with:
-          key: ${{ github.job }}-${{ matrix.duckdb_arch }}
 
       - name: Setup Ubuntu
         if: ${{ matrix.duckdb_arch == 'linux_amd64' || matrix.duckdb_arch == 'linux_arm64' }}
@@ -159,10 +197,60 @@ jobs:
         with:
           aarch64_cross_compile: ${{ matrix.duckdb_arch == 'linux_arm64' && 1 }}
 
+      - uses: actions/checkout@v3
+        name: Checkout override repository
+        if: ${{inputs.override_repository != ''}}
+        with:
+          repository: ${{ inputs.override_repository }}
+          ref: ${{ inputs.override_ref }}
+          fetch-depth: 0
+          submodules: 'true'
+
+      - uses: actions/checkout@v3
+        name: Checkout current repository
+        if: ${{inputs.override_repository == ''}}
+        with:
+          fetch-depth: 0
+          submodules: 'true'
+
+      - name: Checkout DuckDB to version
+        run: |
+          cd duckdb
+          git checkout ${{ inputs.duckdb_version }}
+
+      - name: Setup Rust
+        if: ${{ inputs.enable_rust && matrix.duckdb_arch == 'linux_amd64'}}
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust for cross compilation
+        if: ${{ inputs.enable_rust && matrix.duckdb_arch == 'linux_arm64'}}
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Setup Rust for manylinux (dtolnay/rust-toolchain doesn't work due to curl being old here)
+        if: ${{ inputs.enable_rust && matrix.duckdb_arch == 'linux_amd64_gcc4' }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Setup Ccache
+        uses: hendrikmuhs/ccache-action@v1.2.11 # Note: pinned due to GLIBC incompatibility in later releases
+        continue-on-error: true
+        with:
+          key: ${{ github.job }}-${{ matrix.duckdb_arch }}
+
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11.1
         with:
           vcpkgGitCommitId: ${{ inputs.vcpkg_commit }}
+
+      - name: Configure OpenSSL for Rust
+        if: ${{ inputs.enable_rust }}
+        run: |
+          echo "OPENSSL_ROOT_DIR=`pwd`/build/release/vcpkg_installed/${{ matrix.vcpkg_triplet }}" >> $GITHUB_ENV
+          echo "OPENSSL_DIR=`pwd`/build/release/vcpkg_installed/${{ matrix.vcpkg_triplet }}" >> $GITHUB_ENV
+          echo "OPENSSL_USE_STATIC_LIBS=true" >> $GITHUB_ENV
 
       - name: Build extension
         env:
@@ -195,12 +283,23 @@ jobs:
       VCPKG_TOOLCHAIN_PATH: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
       VCPKG_TARGET_TRIPLET: ${{ matrix.vcpkg_triplet }}
       OSX_BUILD_ARCH: ${{ matrix.osx_build_arch }}
-      GEN: Ninja
+      GEN: ninja
       BUILD_SHELL: ${{ inputs.build_duckdb_shell && '1' || '0' }}
       DUCKDB_PLATFORM: ${{ matrix.duckdb_arch }}
 
     steps:
       - uses: actions/checkout@v3
+        name: Checkout override repository
+        if: ${{inputs.override_repository != ''}}
+        with:
+          repository: ${{ inputs.override_repository }}
+          ref: ${{ inputs.override_ref }}
+          fetch-depth: 0
+          submodules: 'true'
+
+      - uses: actions/checkout@v3
+        name: Checkout current repository
+        if: ${{inputs.override_repository == ''}}
         with:
           fetch-depth: 0
           submodules: 'true'
@@ -228,6 +327,11 @@ jobs:
         uses: lukka/run-vcpkg@v11.1
         with:
           vcpkgGitCommitId: ${{ inputs.vcpkg_commit }}
+
+      - name: Install Rust cross compile dependency
+        if: ${{ inputs.enable_rust && matrix.osx_build_arch == 'x86_64'}}
+        run: |
+          rustup target add x86_64-apple-darwin
 
       - name: Build extension
         shell: bash
@@ -257,7 +361,6 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.generate_matrix.outputs.windows_matrix)}}
     env:
-      GEN: Ninja
       VCPKG_TOOLCHAIN_PATH: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
       VCPKG_TARGET_TRIPLET: ${{ matrix.vcpkg_triplet }}
       BUILD_SHELL: ${{ inputs.build_duckdb_shell && '1' || '0' }}
@@ -273,6 +376,17 @@ jobs:
           git config --global core.eol lf
 
       - uses: actions/checkout@v3
+        name: Checkout override repository
+        if: ${{inputs.override_repository != ''}}
+        with:
+          repository: ${{ inputs.override_repository }}
+          ref: ${{ inputs.override_ref }}
+          fetch-depth: 0
+          submodules: 'true'
+
+      - uses: actions/checkout@v3
+        name: Checkout current repository
+        if: ${{inputs.override_repository == ''}}
         with:
           fetch-depth: 0
           submodules: 'true'
@@ -280,6 +394,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Setup Rust
+        if: inputs.enable_rust
+        uses: dtolnay/rust-toolchain@stable
 
       - uses: r-lib/actions/setup-r@v2
         if: matrix.duckdb_arch == 'windows_amd64_rtools'
@@ -304,19 +422,8 @@ jobs:
         with:
           vcpkgGitCommitId: ${{ inputs.vcpkg_commit }}
 
-      - name: Fix for MSVC issue
-        shell: bash
-        env:
-          OVERLAY_TRIPLET_SRC:  ${{ github.workspace }}/vcpkg/triplets/community/x64-windows-static-md.cmake
-          OVERLAY_TRIPLET_DST:  ${{ github.workspace }}/overlay_triplets/x64-windows-static-md.cmake
-        run: |
-          mkdir overlay_triplets
-          cp $OVERLAY_TRIPLET_SRC $OVERLAY_TRIPLET_DST
-          echo "set(VCPKG_PLATFORM_TOOLSET_VERSION "14.39")" >> $OVERLAY_TRIPLET_DST
-
       - name: Build & test extension
         env:
-          VCPKG_OVERLAY_TRIPLETS: "${{ github.workspace }}/overlay_triplets"
           DUCKDB_PLATFORM: ${{ matrix.duckdb_arch }}
           DUCKDB_PLATFORM_RTOOLS: ${{ matrix.duckdb_arch == 'windows_amd64_rtools' && 1 || 0 }}
         run: |
@@ -339,11 +446,21 @@ jobs:
     env:
       VCPKG_TARGET_TRIPLET: ${{ matrix.vcpkg_triplet }}
       VCPKG_TOOLCHAIN_PATH: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
-      GEN: Ninja
       DUCKDB_PLATFORM: ${{ matrix.duckdb_arch }}
 
     steps:
       - uses: actions/checkout@v3
+        name: Checkout override repository
+        if: ${{inputs.override_repository != ''}}
+        with:
+          repository: ${{ inputs.override_repository }}
+          ref: ${{ inputs.override_ref }}
+          fetch-depth: 0
+          submodules: 'true'
+
+      - uses: actions/checkout@v3
+        name: Checkout current repository
+        if: ${{inputs.override_repository == ''}}
         with:
           fetch-depth: 0
           submodules: 'true'
@@ -356,6 +473,12 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v13
         with:
           version: 'latest'
+
+      - name: Setup Rust for cross compilation
+        if: ${{ inputs.enable_rust}}
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-emscripten
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11.1
