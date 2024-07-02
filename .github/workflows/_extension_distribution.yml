@@ -215,7 +215,7 @@ jobs:
 
       - name: Checkout DuckDB to version
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
       - name: Setup Rust
