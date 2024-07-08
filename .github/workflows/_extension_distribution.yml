@@ -206,7 +206,7 @@ jobs:
           echo "Setup ManyLinux2014"
           cd $CURR_DIR
           if [ "${DUCKDB_PLATFORM}" = "linux_amd64_gcc4" ]; then
-            ./duckdb/scripts/setup_manylinux2014.sh general aws-cli ccache ssh python_alias openssl vcpkg
+            ./duckdb-pgq/scripts/setup_manylinux2014.sh general aws-cli ccache ssh python_alias openssl vcpkg
           else
             apt-get update -y -qq
             apt-get install -y -qq software-properties-common
