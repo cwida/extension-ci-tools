@@ -190,7 +190,7 @@ jobs:
           ###
           echo "Checkout DuckDB to version"
           cd $CURR_DIR
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
           ###
           echo "Fix CentOS 7 EOL"
@@ -249,7 +249,7 @@ jobs:
           ###
           echo "Checkout DuckDB to version"
           cd $CURR_DIR
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
           ###
           echo "Setup vcpkg"
