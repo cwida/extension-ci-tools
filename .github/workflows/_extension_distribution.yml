@@ -191,6 +191,7 @@ jobs:
             make
             make prefix=/usr install
             git --version
+            git config --global --add safe.directory '*'
           fi
           ###
           echo "Checkout DuckDB to version"
