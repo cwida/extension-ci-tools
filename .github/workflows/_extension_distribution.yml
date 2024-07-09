@@ -144,6 +144,22 @@ jobs:
       CONTAINER: ${{ matrix.container }}
 
     steps:
+      - uses: actions/checkout@v3
+        name: Checkout override repository
+        if: ${{inputs.override_repository != ''}}
+        with:
+          repository: ${{ inputs.override_repository }}
+          ref: ${{ inputs.override_ref }}
+          fetch-depth: 0
+          submodules: 'true'
+
+      - uses: actions/checkout@v3
+        name: Checkout current repository
+        if: ${{inputs.override_repository == ''}}
+        with:
+          fetch-depth: 0
+          submodules: 'true'
+
       - name: Setup and build extension
         shell: bash
         run: |
@@ -177,19 +193,10 @@ jobs:
             git --version
           fi
           ###
-          echo "Checkout"
-          cd $CURR_DIR
-          git init
-          git config --global --add safe.directory $CURR_DIR
-          git remote add origin https://github.com/$REPO_NAME
-          git fetch
-          git checkout main
-          git checkout $REPO_REF
-          git submodule init
-          git submodule update
-          ###
           echo "Checkout DuckDB to version"
           cd $CURR_DIR
+          git config --global --add safe.directory $CURR_DIR
+          git config --global --add safe.directory $CURR_DIR/duckdb
           cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
           ###
@@ -245,7 +252,9 @@ jobs:
           ###
           echo "Checkout, again"
           cd $CURR_DIR
-          git checkout $REPO_REF
+          if [ -n "${REPO_REF}" ]; then
+            git checkout $REPO_REF
+          fi
           ###
           echo "Checkout DuckDB to version"
           cd $CURR_DIR
