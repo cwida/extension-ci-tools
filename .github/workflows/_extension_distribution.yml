@@ -44,7 +44,7 @@ on:
       matrix_parse_script:
         required: false
         type: string
-        default: "./duckdb/scripts/modify_distribution_matrix.py"
+        default: "./duckdb-pgq/scripts/modify_distribution_matrix.py"
       # Enable building the DuckDB Shell
       build_duckdb_shell:
         required: false
@@ -114,15 +114,15 @@ jobs:
 
       - name: Checkout DuckDB to version
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
       - id: parse-matrices
         run: |
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb/.github/config/distribution_matrix.json --select_os linux --output linux_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb/.github/config/distribution_matrix.json --select_os osx --output osx_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb/.github/config/distribution_matrix.json --select_os windows --output windows_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb/.github/config/distribution_matrix.json --select_os wasm --output wasm_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os linux --output linux_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os osx --output osx_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os windows --output windows_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os wasm --output wasm_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
 
       - id: set-matrix-linux
         run: |
@@ -262,13 +262,13 @@ jobs:
 
       - name: Checkout DuckDB to version
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
       - name: Setup ManyLinux2014
         if: ${{ matrix.duckdb_arch == 'linux_amd64_gcc4' }}
         run: |
-          ./duckdb/scripts/setup_manylinux2014.sh general ccache ssh python_alias openssl
+          ./duckdb-pgq/scripts/setup_manylinux2014.sh general ccache ssh python_alias openssl
 
       - uses: actions/checkout@v3
         name: Checkout Extension CI tools
@@ -389,7 +389,7 @@ jobs:
 
       - name: Checkout DuckDB to version
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
       - name: Setup vcpkg
@@ -524,7 +524,7 @@ jobs:
 
       - name: Checkout DuckDB to version
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
       - name: Setup Ccache
@@ -599,7 +599,7 @@ jobs:
 
       - name: Checkout DuckDB to version
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
       - uses: mymindstorm/setup-emsdk@v13

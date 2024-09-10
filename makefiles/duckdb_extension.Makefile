@@ -12,9 +12,9 @@
 all: release
 
 TEST_PATH="/test/unittest"
-DUCKDB_PATH="/duckdb"
+DUCKDB_PATH="/duckdb-pgq"
 
-DUCKDB_SRCDIR ?= "./duckdb/"
+DUCKDB_SRCDIR ?= "./duckdb-pgq/"
 
 # For non-MinGW windows the path is slightly different
 ifeq ($(OS),Windows_NT)
