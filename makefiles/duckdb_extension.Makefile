@@ -12,7 +12,7 @@
 all: release
 
 TEST_PATH="/test/unittest"
-DUCKDB_PATH="/duckdb"
+DUCKDB_PATH="/duckdb-pgq"
 
 DUCKDB_SRCDIR ?= "./duckdb/"
 
