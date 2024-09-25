@@ -5,6 +5,7 @@
 #   - uploads the extensions as gh actions artifacts in the following format:
 #         <ext_name>-<duckdb_version>-extension-<arch><optional_postfix>
 #
+#
 # note: extensions are simply uploaded to GitHub actions, deploying the extensions is done a separate step. More info on
 #       this can be found in https://github.com/duckdb/extension-template
 
