@@ -49,7 +49,7 @@ on:
       matrix_parse_script:
         required: false
         type: string
-        default: "./duckdb/scripts/modify_distribution_matrix.py"
+        default: "./duckdb-pgq/scripts/modify_distribution_matrix.py"
       # Enable building the DuckDB Shell
       build_duckdb_shell:
         required: false
@@ -69,7 +69,7 @@ on:
       override_ci_tools_repository:
         required: false
         type: string
-        default: "duckdb/extension-ci-tools"
+        default: "duckdb-pgq/extension-ci-tools"
       # Pass extra toolchains
       #   available: (rust, fortran, omp)
       extra_toolchains:
@@ -144,15 +144,15 @@ jobs:
       - name: Tag DuckDB extension
         if: ${{inputs.duckdb_tag != ''}}
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git tag ${{ inputs.duckdb_tag }}
 
       - id: parse-matrices
         run: |
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb/.github/config/distribution_matrix.json --select_os linux --output linux_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb/.github/config/distribution_matrix.json --select_os osx --output osx_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb/.github/config/distribution_matrix.json --select_os windows --output windows_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
-          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb/.github/config/distribution_matrix.json --select_os wasm --output wasm_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os linux --output linux_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os osx --output osx_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os windows --output windows_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
+          python3 ${{ inputs.matrix_parse_script }} --input ./duckdb-pgq/.github/config/distribution_matrix.json --select_os wasm --output wasm_matrix.json --exclude "${{ inputs.exclude_archs }}" --pretty
 
       - id: set-matrix-linux
         run: |
@@ -211,7 +211,7 @@ jobs:
 
       - name: Checkout DuckDB to version
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
       - name: Tag extension
@@ -222,7 +222,7 @@ jobs:
       - name: Tag DuckDB extension
         if: ${{inputs.duckdb_tag != ''}}
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git tag ${{ inputs.duckdb_tag }}
 
       - uses: actions/checkout@v4
@@ -240,7 +240,7 @@ jobs:
             --build-arg 'vcpkg_url=${{ inputs.vcpkg_url }}' \
             --build-arg 'vcpkg_commit=${{ inputs.vcpkg_commit }}' \
             --build-arg 'extra_toolchains=${{ inputs.enable_rust  && format(';{0};rust;', inputs.extra_toolchains) || format(';{0};', inputs.extra_toolchains) }}' \
-            -t duckdb/${{ matrix.duckdb_arch }} \
+            -t duckdb-pgq/${{ matrix.duckdb_arch }} \
             ./extension-ci-tools/docker/${{ matrix.duckdb_arch }}
 
       - name: Create env file for docker
@@ -275,12 +275,12 @@ jobs:
 
       - name: Build extension
         run: |
-          docker run --env-file=docker_env.txt -v `pwd`:/duckdb_build_dir -v `pwd`/ccache_dir:/ccache_dir duckdb/${{ matrix.duckdb_arch }} make release
+          docker run --env-file=docker_env.txt -v `pwd`:/duckdb_build_dir -v `pwd`/ccache_dir:/ccache_dir duckdb-pgq/${{ matrix.duckdb_arch }} make release
 
       - name: Test extension
         if: ${{ matrix.duckdb_arch != 'linux_arm64' }}
         run: |
-          docker run --env-file=docker_env.txt -v `pwd`:/duckdb_build_dir -v `pwd`/ccache_dir:/ccache_dir duckdb/${{ matrix.duckdb_arch }} make test
+          docker run --env-file=docker_env.txt -v `pwd`:/duckdb_build_dir -v `pwd`/ccache_dir:/ccache_dir duckdb-pgq/${{ matrix.duckdb_arch }} make test
 
       - uses: actions/upload-artifact@v3
         with:
@@ -364,7 +364,7 @@ jobs:
       - name: Tag DuckDB extension
         if: ${{inputs.duckdb_tag != ''}}
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git tag ${{ inputs.duckdb_tag }}
 
 
@@ -527,7 +527,7 @@ jobs:
 
       - name: Checkout DuckDB to version
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git checkout ${{ inputs.duckdb_version }}
 
       - name: Tag extension
@@ -538,7 +538,7 @@ jobs:
       - name: Tag DuckDB extension
         if: ${{inputs.duckdb_tag != ''}}
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git tag ${{ inputs.duckdb_tag }}
 
 
@@ -634,7 +634,7 @@ jobs:
       - name: Tag DuckDB extension
         if: ${{inputs.duckdb_tag != ''}}
         run: |
-          cd duckdb
+          cd duckdb-pgq
           git tag ${{ inputs.duckdb_tag }}
 
       - uses: mymindstorm/setup-emsdk@v13
