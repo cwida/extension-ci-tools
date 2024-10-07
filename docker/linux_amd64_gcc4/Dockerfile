@@ -10,7 +10,7 @@ RUN yum install -y gcc-c++
 RUN yum install -y nodejs
 
 # Setup the basic necessities
-RUN yum install -y curl zip unzip tar
+RUN yum install -y curl zip unzip tar autoconf
 RUN yum install -y ninja-build
 RUN yum install -y perl-IPC-Cmd
 RUN yum install -y ccache
@@ -71,3 +71,10 @@ RUN if [[ $extra_toolchains == *";go;"* ]]; then \
       tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz; \
 fi
 ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install Python3
+RUN case "$extra_toolchains" in \
+  *\;python3\;*) \
+    yum install -y python3; \
+  ;; \
+esac
